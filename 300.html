@@ -1,249 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>29 Card Game</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #4a90e2, #6a5acd);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-      text-align: center;
-    }
-
-    .peer-id-section {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-
-    .peer-id-section input, .peer-id-section button {
-      padding: 8px;
-      font-size: 1rem;
-      margin-top: 8px;
-    }
-
-    #connect-button {
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    #connect-button.connected {
-      background-color: #ff4d4d;
-    }
-
-    .connection-status {
-      margin-top: 10px;
-      font-size: 1rem;
-      text-align: center;
-    }
-
-    .card-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      max-width: 100%;
-      margin: 0 auto;
-    }
-
-    .card {
-      width: 60px;
-      height: 90px;
-      background-color: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-size: 14px;
-      position: relative;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    }
-
-    .card.red { color: #ff4d4d; }
-    .card.black { color: #333; }
-
-    .card.selected {
-      border: 3px solid #4caf50;
-      background-color: #e8f5e9;
-    }
-
-    .tick-mark {
-      position: absolute;
-      bottom: 4px;
-      left: 4px;
-      font-size: 16px;
-      color: #4caf50;
-      font-weight: bold;
-      display: none;
-    }
-
-    .card.partner-selected .tick-mark {
-      display: block;
-    }
-
-    .selected-cards, .partner-selected-cards {
-      margin-top: 10px;
-      font-size: 0.9rem;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walkie-Talkie Web</title>
+    <script src="https://unpkg.com/peerjs@1.4.6/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #222;
+            color: white;
+            padding: 20px;
+        }
+        #peerIdDisplay {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            width: 90%;
+            max-width: 300px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input {
+            background-color: #444;
+            color: white;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #218838;
+        }
+    </style>
 </head>
 <body>
-  <h1>29 Card Game</h1>
-  <div class="peer-id-section">
-    <p>Your Peer ID: <strong id="my-peer-id"></strong></p>
-    <input type="text" id="partner-peer-id" placeholder="Enter Partner's Peer ID">
-    <button onclick="toggleConnection()" id="connect-button">Connect</button>
-  </div>
-  <div class="connection-status" id="connection-status">
-    Connection Status: <span id="status-text">Not Connected</span>
-  </div>
-  <p>Select 8 Cards:</p>
-  <div class="card-container" id="card-container"></div>
-  <div class="selected-cards" id="selected-cards">
-    Your Selected Cards: <span id="your-cards"></span>
-  </div>
-  <div class="partner-selected-cards" id="partner-selected-cards">
-    Partner's Selected Cards: <span id="partner-cards"></span>
-  </div>
 
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-  <script>
-    const suits = [
-      { name: 'Spades', symbol: '♠', color: 'black' },
-      { name: 'Hearts', symbol: '♥', color: 'red' },
-      { name: 'Diamonds', symbol: '♦', color: 'red' },
-      { name: 'Clubs', symbol: '♣', color: 'black' },
-    ];
-    const ranks = ['7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-    const cards = suits.flatMap(suit => ranks.map(rank => ({
-      name: `${rank} of ${suit.name}`,
-      symbol: suit.symbol,
-      color: suit.color,
-      rank: rank,
-    })));
+    <h2>Walkie-Talkie Web</h2>
+    <p id="peerIdDisplay">Connecting...</p>
 
-    let selectedCards = [];
-    let partnerSelectedCards = [];
+    <input type="text" id="remotePeerId" placeholder="Enter Remote Peer ID">
+    <button id="connectBtn">Connect</button>
+    <br><br>
+    
+    <button id="talkBtn" disabled>Hold to Talk</button>
 
-    const cardContainer = document.getElementById('card-container');
-    const yourCardsDisplay = document.getElementById('your-cards');
-    const partnerCardsDisplay = document.getElementById('partner-cards');
-    const myPeerIdDisplay = document.getElementById('my-peer-id');
-    const partnerPeerIdInput = document.getElementById('partner-peer-id');
-    const connectButton = document.getElementById('connect-button');
-    const statusText = document.getElementById('status-text');
+    <script>
+        const peer = new Peer(); // Create PeerJS instance
+        let localStream = null;
+        let call = null;
 
-    let peer = new Peer();
-    let conn;
+        peer.on('open', (id) => {
+            document.getElementById('peerIdDisplay').innerText = "Your Peer ID: " + id;
+        });
 
-    peer.on('open', id => {
-      myPeerIdDisplay.textContent = id;
-    });
+        peer.on('call', (incomingCall) => {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                incomingCall.answer(stream);
+                incomingCall.on('stream', (remoteStream) => {
+                    playAudio(remoteStream);
+                });
+            }).catch((err) => {
+                console.error('Microphone error:', err);
+            });
+        });
 
-    peer.on('connection', connection => {
-      conn = connection;
-      setupConnection();
-      updateConnectionStatus('Connected');
-    });
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            const remotePeerId = document.getElementById('remotePeerId').value;
+            if (!remotePeerId) return alert('Enter a valid Peer ID');
+            document.getElementById('talkBtn').disabled = false;
+        });
 
-    function toggleConnection() {
-      if (connectButton.textContent === 'Connect') {
-        connectToPartner();
-      } else {
-        disconnectFromPartner();
-      }
-    }
+        document.getElementById('talkBtn').addEventListener('mousedown', () => {
+            startTalking();
+        });
 
-    function connectToPartner() {
-      const partnerId = partnerPeerIdInput.value.trim();
-      if (partnerId) {
-        conn = peer.connect(partnerId);
-        setupConnection();
-        updateConnectionStatus('Connecting...');
-      }
-    }
+        document.getElementById('talkBtn').addEventListener('mouseup', () => {
+            stopTalking();
+        });
 
-    function disconnectFromPartner() {
-      if (conn) conn.close();
-      updateConnectionStatus('Disconnected');
-    }
+        document.getElementById('talkBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startTalking();
+        });
 
-    function setupConnection() {
-      conn.on('open', () => updateConnectionStatus('Connected'));
+        document.getElementById('talkBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stopTalking();
+        });
 
-      conn.on('data', data => {
-        if (data.type === 'card-selected') {
-          if (!partnerSelectedCards.includes(data.card)) {
-            partnerSelectedCards.push(data.card);
-            highlightPartnerCard(data.card);
-          }
-        } else if (data.type === 'card-deselected') {
-          partnerSelectedCards = partnerSelectedCards.filter(card => card !== data.card);
-          unhighlightPartnerCard(data.card);
+        function startTalking() {
+            const remotePeerId = document.getElementById('remotePeerId').value;
+            if (!remotePeerId) return;
+
+            navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                localStream = stream;
+                call = peer.call(remotePeerId, stream);
+            }).catch((err) => {
+                console.error('Microphone error:', err);
+            });
         }
-        updateDisplay();
-      });
 
-      conn.on('close', () => updateConnectionStatus('Disconnected'));
-    }
+        function stopTalking() {
+            if (call) {
+                call.close();
+                call = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+        }
 
-    function updateConnectionStatus(status) {
-      statusText.textContent = status;
-      connectButton.textContent = status === 'Connected' ? 'Disconnect' : 'Connect';
-      connectButton.classList.toggle('connected', status === 'Connected');
-    }
+        function playAudio(stream) {
+            const audio = new Audio();
+            audio.srcObject = stream;
+            audio.play();
+        }
+    </script>
 
-    cards.forEach(card => {
-      const cardElement = document.createElement('div');
-      cardElement.classList.add('card', card.color);
-      cardElement.innerHTML = `
-        <div>${card.rank} ${card.symbol}</div>
-        <div class="tick-mark">✔️</div>
-      `;
-      cardElement.addEventListener('click', () => toggleCardSelection(card, cardElement));
-      cardContainer.appendChild(cardElement);
-    });
-
-    function toggleCardSelection(card, cardElement) {
-      if (selectedCards.includes(card.name)) {
-        selectedCards = selectedCards.filter(c => c !== card.name);
-        cardElement.classList.remove('selected');
-        if (conn) conn.send({ type: 'card-deselected', card: card.name });
-      } else if (selectedCards.length < 8) {
-        selectedCards.push(card.name);
-        cardElement.classList.add('selected');
-        if (conn) conn.send({ type: 'card-selected', card: card.name });
-      }
-      updateDisplay();
-    }
-  </script>
 </body>
 </html>
