@@ -31,6 +31,37 @@
       margin-bottom: 20px;
     }
 
+    /* Peer ID Section */
+    .peer-id-section {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .peer-id-section input {
+      padding: 10px;
+      font-size: 1rem;
+      border: 2px solid #4caf50;
+      border-radius: 5px;
+      margin-top: 10px;
+      width: 200px;
+      text-align: center;
+    }
+
+    .peer-id-section button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #4caf50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .peer-id-section button:hover {
+      background-color: #45a049;
+    }
+
     /* Card Container */
     .card-container {
       display: flex;
@@ -133,6 +164,11 @@
 </head>
 <body>
   <h1>29 Card Game</h1>
+  <div class="peer-id-section">
+    <p>Your Peer ID: <strong id="my-peer-id"></strong></p>
+    <input type="text" id="partner-peer-id" placeholder="Enter Partner's Peer ID">
+    <button onclick="connectToPartner()">Connect</button>
+  </div>
   <p>Select 8 Cards:</p>
   <div class="card-container" id="card-container">
     <!-- Cards will be dynamically generated here -->
@@ -166,6 +202,8 @@
     const cardContainer = document.getElementById('card-container');
     const yourCardsDisplay = document.getElementById('your-cards');
     const partnerCardsDisplay = document.getElementById('partner-cards');
+    const myPeerIdDisplay = document.getElementById('my-peer-id');
+    const partnerPeerIdInput = document.getElementById('partner-peer-id');
 
     let selectedCards = [];
     let partnerSelectedCards = [];
@@ -176,7 +214,6 @@
 
     // Generate a random peer ID
     const peerId = Math.random().toString(36).substring(2, 8);
-    const partnerId = prompt("Enter your partner's Peer ID:");
 
     // Initialize PeerJS
     peer = new Peer(peerId, {
@@ -188,16 +225,23 @@
 
     peer.on('open', (id) => {
       console.log('My Peer ID:', id);
-      if (partnerId) {
-        conn = peer.connect(partnerId);
-        setupConnection(conn);
-      }
+      myPeerIdDisplay.textContent = id;
     });
 
     peer.on('connection', (connection) => {
       conn = connection;
       setupConnection(conn);
     });
+
+    function connectToPartner() {
+      const partnerId = partnerPeerIdInput.value.trim();
+      if (partnerId) {
+        conn = peer.connect(partnerId);
+        setupConnection(conn);
+      } else {
+        alert('Please enter your partner\'s Peer ID.');
+      }
+    }
 
     function setupConnection(connection) {
       conn.on('data', (data) => {
