@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29 Card Game</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #4a90e2, #6a5acd);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    /* Peer ID Section */
+    .peer-id-section {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .peer-id-section input {
+      padding: 8px;
+      font-size: 0.9rem;
+      border: 2px solid #4caf50;
+      border-radius: 5px;
+      margin-top: 8px;
+      width: 150px;
+      text-align: center;
+    }
+
+    .peer-id-section button {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    #connect-button {
+      background-color: #4caf50; /* Green */
+    }
+
+    #connect-button.connected {
+      background-color: #ff4d4d; /* Red */
+    }
+
+    .peer-id-section button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Connection Status */
+    .connection-status {
+      margin-top: 10px;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    /* Card Container */
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Realistic Card Styles */
+    .card {
+      width: 60px;
+      height: 90px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      user-select: none;
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .card.red {
+      color: #ff4d4d;
+    }
+
+    .card.black {
+      color: #333;
+    }
+
+    /* Your Selected Cards (Green Border) */
+    .card.selected {
+      border: 3px solid #4caf50; /* Green border */
+      background-color: #e8f5e9; /* Light green background */
+    }
+
+    /* Partner's Selected Cards (Cross Mark) */
+    .card.partner-selected::after {
+      content: '❌';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: rgba(255, 0, 0, 0.8);
+    }
+
+    /* Card Corner Indices */
+    .card .top-left, .card .bottom-right {
+      position: absolute;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .card .top-left {
+      top: 4px;
+      left: 4px;
+    }
+
+    .card .bottom-right {
+      bottom: 4px;
+      right: 4px;
+      transform: rotate(180deg);
+    }
+
+    /* Card Suit and Rank */
+    .card .suit {
+      font-size: 24px;
+    }
+
+    /* Selected Cards Display */
+    .selected-cards, .partner-selected-cards {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    /* Responsive Design for Larger Screens */
+    @media (min-width: 600px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      p {
+        font-size: 1.2rem;
+      }
+
+      .peer-id-section input {
+        width: 200px;
+        font-size: 1rem;
+      }
+
+      .peer-id-section button {
+        padding: 10px 20px;
+        font-size: 1rem;
+      }
+
+      .card {
+        width: 80px;
+        height: 120px;
+        font-size: 18px;
+      }
+
+      .card .suit {
+        font-size: 30px;
+      }
+
+      .card .top-left, .card .bottom-right {
+        font-size: 16px;
+      }
+
+      .selected-cards, .partner-selected-cards {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>29 Card Game</h1>
+  <div class="peer-id-section">
+    <p>Your Peer ID: <strong id="my-peer-id"></strong></p>
+    <input type="text" id="partner-peer-id" placeholder="Enter Partner's Peer ID">
+    <button onclick="toggleConnection()" id="connect-button">Connect</button>
+  </div>
+  <div class="connection-status" id="connection-status">
+    Connection Status: <span id="status-text">Not Connected</span>
+  </div>
+  <p>Select 8 Cards:</p>
+  <div class="card-container" id="card-container">
+    <!-- Cards will be dynamically generated here -->
+  </div>
+  <div class="selected-cards" id="selected-cards">
+    Your Selected Cards: <span id="your-cards"></span>
+  </div>
+  <div class="partner-selected-cards" id="partner-selected-cards">
+    Partner's Selected Cards: <span id="partner-cards"></span>
+  </div>
+
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script>
+    // Define the 29 Card Game deck (32 cards with Black and Red suits)
+    const suits = [
+      { name: 'Spades', symbol: '♠', color: 'black' },
+      { name: 'Hearts', symbol: '♥', color: 'red' },
+      { name: 'Diamonds', symbol: '♦', color: 'red' },
+      { name: 'Clubs', symbol: '♣', color: 'black' },
+    ];
+    const ranks = ['7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    const cards = suits.flatMap(suit => 
+      ranks.map(rank => ({
+        name: `${rank} of ${suit.name}`,
+        symbol: suit.symbol,
+        color: suit.color,
+        rank: rank,
+      }))
+    );
+
+    const cardContainer = document.getElementById('card-container');
+    const yourCardsDisplay = document.getElementById('your-cards');
+    const partnerCardsDisplay = document.getElementById('partner-cards');
+    const myPeerIdDisplay = document.getElementById('my-peer-id');
+    const partnerPeerIdInput = document.getElementById('partner-peer-id');
+    const connectButton = document.getElementById('connect-button');
+    const statusText = document.getElementById('status-text');
+
+    let selectedCards = [];
+    let partnerSelectedCards = [];
+
+    // PeerJS setup
+    let peer;
+    let conn;
+
+    // Load saved Peer ID from local storage
+    let savedPeerId = localStorage.getItem('peerId');
+    if (!savedPeerId) {
+      savedPeerId = Math.random().toString(36).substring(2, 8);
+      localStorage.setItem('peerId', savedPeerId);
+    }
+
+    // Initialize PeerJS
+    peer = new Peer(savedPeerId, {
+      host: '0.peerjs.com',
+      port: 443,
+      path: '/',
+      debug: 3,
+    });
+
+    peer.on('open', (id) => {
+      console.log('My Peer ID:', id);
+      myPeerIdDisplay.textContent = id;
+    });
+
+    peer.on('connection', (connection) => {
+      conn = connection;
+      setupConnection(conn);
+      updateConnectionStatus('Connected');
+    });
+
+    peer.on('disconnected', () => {
+      updateConnectionStatus('Disconnected');
+    });
+
+    peer.on('close', () => {
+      updateConnectionStatus('Disconnected');
+    });
+
+    peer.on('error', (err) => {
+      console.error('PeerJS error:', err);
+      updateConnectionStatus('Error: ' + err.message);
+    });
+
+    function toggleConnection() {
+      if (connectButton.textContent === 'Connect') {
+        connectToPartner();
+      } else {
+        disconnectFromPartner();
+      }
+    }
+
+    function connectToPartner() {
+      const partnerId = partnerPeerIdInput.value.trim();
+      if (partnerId) {
+        conn = peer.connect(partnerId);
+        setupConnection(conn);
+        updateConnectionStatus('Connecting...');
+      } else {
+        alert('Please enter your partner\'s Peer ID.');
+      }
+    }
+
+    function disconnectFromPartner() {
+      if (conn) {
+        conn.close();
+        conn = null;
+      }
+      updateConnectionStatus('Disconnected');
+    }
+
+    function setupConnection(connection) {
+      conn.on('open', () => {
+        updateConnectionStatus('Connected');
+        // Send your Peer ID to the partner
+        conn.send({ type: 'peer-id', peerId: myPeerIdDisplay.textContent });
+      });
+
+      conn.on('data', (data) => {
+        if (data.type === 'peer-id') {
+          // Update the partner's input placeholder with your Peer ID
+          partnerPeerIdInput.placeholder = `Your Peer ID: ${data.peerId}`;
+        } else if (data.type === 'card-selected') {
+          if (!partnerSelectedCards.includes(data.card)) {
+            partnerSelectedCards.push(data.card);
+            updateDisplay();
+            highlightPartnerCard(data.card);
+          }
+        } else if (data.type === 'card-deselected') {
+          partnerSelectedCards = partnerSelectedCards.filter(card => card !== data.card);
+          updateDisplay();
+          unhighlightPartnerCard(data.card);
+        }
+      });
+
+      conn.on('close', () => {
+        updateConnectionStatus('Disconnected');
+      });
+    }
+
+    function updateConnectionStatus(status) {
+      statusText.textContent = status;
+      if (status === 'Connected') {
+        connectButton.textContent = 'Disconnect';
+        connectButton.classList.add('connected');
+      } else {
+        connectButton.textContent = 'Connect';
+        connectButton.classList.remove('connected');
+      }
+    }
+
+    // Render cards
+    cards.forEach(card => {
+      const cardElement = document.createElement('div');
+      cardElement.classList.add('card', card.color);
+      cardElement.innerHTML = `
+        <div class="top-left">
+          <div>${card.rank}</div>
+          <div>${card.symbol}</div>
+        </div>
+        <div class="suit">${card.symbol}</div>
+        <div class="bottom-right">
+          <div>${card.rank}</div>
+          <div>${card.symbol}</div>
+        </div>
+      `;
+      cardElement.addEventListener('click', () => toggleCardSelection(card, cardElement));
+      cardContainer.appendChild(cardElement);
+    });
+
+    // Toggle card selection
+    function toggleCardSelection(card, cardElement) {
+      if (selectedCards.includes(card)) {
+        // Deselect the card
+        selectedCards = selectedCards.filter(selectedCard => selectedCard !== card);
+        cardElement.classList.remove('selected');
+        if (conn) {
+          conn.send({ type: 'card-deselected', card: card.name });
+        }
+      } else {
+        // Select the card
+        if (selectedCards.length >= 8) {
+          alert('You can only select 8 cards.');
+          return;
+        }
+        selectedCards.push(card);
+        cardElement.classList.add('selected');
+        if (conn) {
+          conn.send({ type: 'card-selected', card: card.name });
+        }
+      }
+      updateDisplay();
+    }
+
+    // Highlight partner's selected card
+    function highlightPartnerCard(cardName) {
+      const cardElements = document.querySelectorAll('.card');
+      cardElements.forEach(cardElement => {
+        if (cardElement.textContent.includes(cardName)) {
+          cardElement.classList.add('partner-selected');
+        }
+      });
+    }
+
+    // Unhighlight partner's deselected card
+    function unhighlightPartnerCard(cardName) {
+      const cardElements = document.querySelectorAll('.card');
+      cardElements.forEach(cardElement => {
+        if (cardElement.textContent.includes(cardName)) {
+          cardElement.classList.remove('partner-selected');
+        }
+      });
+    }
+
+    // Update the display of selected cards
+    function updateDisplay() {
+      yourCardsDisplay.textContent = selectedCards.map(card => card.name).join(', ');
+      partnerCardsDisplay.textContent = partnerSelectedCards.join(', ');
+    }
+  </script>
+</body>
+</html>
