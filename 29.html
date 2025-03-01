@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29 Card Game</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #4a90e2, #6a5acd);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+
+    /* Card Container */
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Realistic Card Styles */
+    .card {
+      width: 100px;
+      height: 150px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 18px;
+      user-select: none;
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .card.red {
+      color: #ff4d4d;
+    }
+
+    .card.black {
+      color: #333;
+    }
+
+    .card.selected {
+      background-color: #aaffaa;
+      border-color: #77dd77;
+    }
+
+    /* Card Corner Indices */
+    .card .top-left, .card .bottom-right {
+      position: absolute;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .card .top-left {
+      top: 5px;
+      left: 5px;
+    }
+
+    .card .bottom-right {
+      bottom: 5px;
+      right: 5px;
+      transform: rotate(180deg);
+    }
+
+    /* Card Suit and Rank */
+    .card .suit {
+      font-size: 40px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .card {
+        width: 80px;
+        height: 120px;
+      }
+
+      .card .suit {
+        font-size: 30px;
+      }
+
+      .card .top-left, .card .bottom-right {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>29 Card Game</h1>
+  <p>Select 8 Cards:</p>
+  <div class="card-container" id="card-container">
+    <!-- Cards will be dynamically generated here -->
+  </div>
+  <div class="selected-cards" id="selected-cards">
+    Your Selected Cards: <span id="your-cards"></span>
+  </div>
+  <div class="partner-selected-cards" id="partner-selected-cards">
+    Partner's Selected Cards: <span id="partner-cards"></span>
+  </div>
+
+  <script>
+    // Define the 29 Card Game deck (32 cards with Black and Red suits)
+    const suits = [
+      { name: 'Spades', symbol: '♠', color: 'black' },
+      { name: 'Hearts', symbol: '♥', color: 'red' },
+      { name: 'Diamonds', symbol: '♦', color: 'red' },
+      { name: 'Clubs', symbol: '♣', color: 'black' },
+    ];
+    const ranks = ['7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    const cards = suits.flatMap(suit => 
+      ranks.map(rank => ({
+        name: `${rank} of ${suit.name}`,
+        symbol: suit.symbol,
+        color: suit.color,
+        rank: rank,
+      }))
+    );
+
+    const cardContainer = document.getElementById('card-container');
+    const yourCardsDisplay = document.getElementById('your-cards');
+    const partnerCardsDisplay = document.getElementById('partner-cards');
+
+    let selectedCards = [];
+    let partnerSelectedCards = [];
+
+    // Create a Broadcast Channel
+    const channel = new BroadcastChannel('29-card-game-channel');
+
+    // Render cards
+    cards.forEach(card => {
+      const cardElement = document.createElement('div');
+      cardElement.classList.add('card', card.color);
+      cardElement.innerHTML = `
+        <div class="top-left">
+          <div>${card.rank}</div>
+          <div>${card.symbol}</div>
+        </div>
+        <div class="suit">${card.symbol}</div>
+        <div class="bottom-right">
+          <div>${card.rank}</div>
+          <div>${card.symbol}</div>
+        </div>
+      `;
+      cardElement.addEventListener('click', () => selectCard(card, cardElement));
+      cardContainer.appendChild(cardElement);
+    });
+
+    // Handle card selection
+    function selectCard(card, cardElement) {
+      if (selectedCards.length >= 8) {
+        alert('You can only select 8 cards.');
+        return;
+      }
+
+      if (!selectedCards.includes(card)) {
+        selectedCards.push(card);
+        cardElement.classList.add('selected');
+        updateDisplay();
+
+        // Send selected card to the other tab
+        channel.postMessage({ type: 'card-selected', card });
+      }
+    }
+
+    // Update the display of selected cards
+    function updateDisplay() {
+      yourCardsDisplay.textContent = selectedCards.map(card => card.name).join(', ');
+      partnerCardsDisplay.textContent = partnerSelectedCards.map(card => card.name).join(', ');
+    }
+
+    // Listen for messages from the other tab
+    channel.onmessage = (event) => {
+      const { type, card } = event.data;
+
+      if (type === 'card-selected') {
+        if (!partnerSelectedCards.includes(card)) {
+          partnerSelectedCards.push(card);
+          updateDisplay();
+        }
+      }
+    };
+  </script>
+</body>
+</html>
