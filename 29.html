@@ -245,18 +245,17 @@
 
     function setupConnection(connection) {
       conn.on('data', (data) => {
-        partnerSelectedCards = data;
-        updateDisplay();
-
-        // Add red blur shadow to partner's selected cards
-        const cardElements = document.querySelectorAll('.card');
-        cardElements.forEach(cardElement => {
-          if (partnerSelectedCards.some(card => cardElement.textContent.includes(card.name))) {
-            cardElement.classList.add('partner-selected');
-          } else {
-            cardElement.classList.remove('partner-selected');
+        if (data.type === 'card-selected') {
+          if (!partnerSelectedCards.includes(data.card)) {
+            partnerSelectedCards.push(data.card);
+            updateDisplay();
+            highlightPartnerCard(data.card);
           }
-        });
+        } else if (data.type === 'card-deselected') {
+          partnerSelectedCards = partnerSelectedCards.filter(card => card !== data.card);
+          updateDisplay();
+          unhighlightPartnerCard(data.card);
+        }
       });
     }
 
@@ -275,33 +274,58 @@
           <div>${card.symbol}</div>
         </div>
       `;
-      cardElement.addEventListener('click', () => selectCard(card, cardElement));
+      cardElement.addEventListener('click', () => toggleCardSelection(card, cardElement));
       cardContainer.appendChild(cardElement);
     });
 
-    // Handle card selection
-    function selectCard(card, cardElement) {
-      if (selectedCards.length >= 8) {
-        alert('You can only select 8 cards.');
-        return;
-      }
-
-      if (!selectedCards.includes(card)) {
+    // Toggle card selection
+    function toggleCardSelection(card, cardElement) {
+      if (selectedCards.includes(card)) {
+        // Deselect the card
+        selectedCards = selectedCards.filter(selectedCard => selectedCard !== card);
+        cardElement.classList.remove('selected');
+        if (conn) {
+          conn.send({ type: 'card-deselected', card: card.name });
+        }
+      } else {
+        // Select the card
+        if (selectedCards.length >= 8) {
+          alert('You can only select 8 cards.');
+          return;
+        }
         selectedCards.push(card);
         cardElement.classList.add('selected');
-        updateDisplay();
-
-        // Send selected cards to the partner
         if (conn) {
-          conn.send(selectedCards);
+          conn.send({ type: 'card-selected', card: card.name });
         }
       }
+      updateDisplay();
+    }
+
+    // Highlight partner's selected card
+    function highlightPartnerCard(cardName) {
+      const cardElements = document.querySelectorAll('.card');
+      cardElements.forEach(cardElement => {
+        if (cardElement.textContent.includes(cardName)) {
+          cardElement.classList.add('partner-selected');
+        }
+      });
+    }
+
+    // Unhighlight partner's deselected card
+    function unhighlightPartnerCard(cardName) {
+      const cardElements = document.querySelectorAll('.card');
+      cardElements.forEach(cardElement => {
+        if (cardElement.textContent.includes(cardName)) {
+          cardElement.classList.remove('partner-selected');
+        }
+      });
     }
 
     // Update the display of selected cards
     function updateDisplay() {
       yourCardsDisplay.textContent = selectedCards.map(card => card.name).join(', ');
-      partnerCardsDisplay.textContent = partnerSelectedCards.map(card => card.name).join(', ');
+      partnerCardsDisplay.textContent = partnerSelectedCards.join(', ');
     }
   </script>
 </body>
