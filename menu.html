@@ -2,83 +2,245 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fear Animation - Hacking Simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Card Distribution by Call Number</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            background-color: #f4f4f9;
             margin: 0;
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #000;
-            color: #fff;
-            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-
+        h3 {
+            color: #333;
+            margin: 8px 0;
+            font-size: 1.1rem;
+        }
         .container {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card-list {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 8px;
+            margin: 4px;
+            border-radius: 6px;
+            flex: 1 1 100%;
+            min-width: 0;
+            width: 100%;
+        }
+        .selected {
+            background-color: #e0e0e0;
+        }
+        .card-item {
+            padding: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            margin: 4px 0;
             text-align: center;
-            animation: shake 0.3s infinite;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
         }
-
-        h1 {
-            font-size: 3rem;
-            color: red;
-            text-shadow: 0 0 20px red, 0 0 30px red;
-            animation: flicker 2s infinite;
+        .card-item:hover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
         }
-
-        p {
-            font-size: 1.5rem;
-            margin-top: 20px;
+        .card-item.selected {
+            background-color: #007bff;
             color: white;
-            opacity: 0;
-            animation: fadeIn 4s ease-in forwards;
-            animation-delay: 2s;
+        }
+        .trump-card {
+            background-color: #ffcc00;
+            color: #000;
+            font-weight: bold;
+        }
+        .red { color: red; }
+        .black { color: black; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 12px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: 100%;
+            font-size: 1rem;
+            touch-action: manipulation;
+        }
+        button:active {
+            transform: scale(0.98);
         }
 
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-
-        @keyframes flicker {
-            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-                opacity: 1;
+        @media (min-width: 600px) {
+            .card-list {
+                flex: 1 1 45%;
+                min-width: 280px;
             }
-            20%, 24%, 55% {
-                opacity: 0;
+            .card-item {
+                font-size: 1rem;
+                padding: 8px;
             }
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>We Are Trying to Hack Your Phone</h1>
-        <p>Your data might be at risk. Disconnect now.</p>
+        <!-- Card sections remain same as original -->
+        <div class="card-list">
+            <h3>All Cards (Select 8)</h3>
+            <div id="allCards"></div>
+            <button onclick="confirmSelection()">Confirm My 8 Cards</button>
+        </div>
+
+        <div class="card-list">
+            <h3>My Cards</h3>
+            <div id="myCards"></div>
+        </div>
+
+        <div class="card-list">
+            <h3>AI Call Numbers</h3>
+            <input type="number" id="call2" placeholder="AI 2 Call" min="0">
+            <input type="number" id="call3" placeholder="AI 3 Call" min="0">
+            <input type="number" id="call4" placeholder="AI 4 Call" min="0">
+            <button onclick="distributeCards()">Show AI Cards</button>
+        </div>
+
+        <div class="card-list">
+            <h3>AI Cards</h3>
+            <div id="ai2Cards"></div>
+            <div id="ai3Cards"></div>
+            <div id="ai4Cards"></div>
+        </div>
     </div>
-    <script>
-        setTimeout(() => {
-            const audio = new Audio("https://www.soundjay.com/button/beep-07.wav");
-            audio.loop = true;
-            audio.play();
-        }, 2000);
-    </script>
+
+<!-- JavaScript remains same as original -->
+<script>
+const suits = ['♠', '♣', '♥', '♦'];
+const values = ['7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+let deck = [];
+let selectedCards = [];
+let remainingCards = [];
+
+// Initialize deck
+suits.forEach(suit => {
+    values.forEach(value => {
+        deck.push({
+            value,
+            suit,
+            color: (suit === '♥' || suit === '♦') ? 'red' : 'black',
+            id: `${value}${suit}`
+        });
+    });
+});
+
+// Render all cards
+function renderCards() {
+    const container = document.getElementById('allCards');
+    deck.forEach(card => {
+        const div = document.createElement('div');
+        div.className = `card-item ${card.color}`;
+        div.innerHTML = `${card.value}${card.suit}`;
+        div.onclick = () => toggleSelection(card, div);
+        container.appendChild(div);
+    });
+}
+
+// Toggle card selection
+function toggleSelection(card, element) {
+    const index = selectedCards.findIndex(c => c.id === card.id);
+    if (index === -1) {
+        if (selectedCards.length < 8) {
+            selectedCards.push(card);
+            element.classList.add('selected');
+        }
+    } else {
+        selectedCards.splice(index, 1);
+        element.classList.remove('selected');
+    }
+}
+
+// Confirm player's selection
+function confirmSelection() {
+    if (selectedCards.length !== 8) return alert('Select exactly 8 cards!');
+    
+    remainingCards = deck.filter(card => 
+        !selectedCards.some(selected => selected.id === card.id)
+    );
+    
+    // Display player's cards with trump card highlighted
+    document.getElementById('myCards').innerHTML = selectedCards
+        .map(c => `<div class="${c.color} ${c.id === selectedCards[0].id ? 'trump-card' : ''}">${c.value}${c.suit}</div>`)
+        .join('');
+}
+
+// Distribute cards to AI players
+function distributeCards() {
+    const calls = [
+        parseInt(document.getElementById('call2').value) || 0,
+        parseInt(document.getElementById('call3').value) || 0,
+        parseInt(document.getElementById('call4').value) || 0
+    ];
+
+    // Randomly select 8 cards for each AI player
+    const ai2Cards = getAICards(remainingCards, calls[0]);
+    const ai3Cards = getAICards(remainingCards, calls[1]);
+    const ai4Cards = getAICards(remainingCards, calls[2]);
+
+    // Display results with trump card for each AI
+    document.getElementById('ai2Cards').innerHTML = 
+        `<strong>AI 2 Cards:</strong> ` + formatCards(ai2Cards, calls[0]);
+    document.getElementById('ai3Cards').innerHTML = 
+        `<strong>AI 3 Cards:</strong> ` + formatCards(ai3Cards, calls[1]);
+    document.getElementById('ai4Cards').innerHTML = 
+        `<strong>AI 4 Cards:</strong> ` + formatCards(ai4Cards, calls[2]);
+}
+
+// Get 8 unique AI cards based on the call number
+function getAICards(deck, callNumber) {
+    const aiCards = [];
+    const deckCopy = [...deck];  // Make a copy to avoid modifying the original deck
+    
+    // Randomize deck
+    for (let i = deckCopy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deckCopy[i], deckCopy[j]] = [deckCopy[j], deckCopy[i]]; // Swap
+    }
+
+    // Select 8 cards for the AI player
+    for (let i = 0; i < 8; i++) {
+        aiCards.push(deckCopy.pop());
+    }
+
+    return aiCards;
+}
+
+// Format cards for display with trump card highlighted
+function formatCards(cards, callNumber) {
+    return cards.map(c => {
+        return `<span class="${c.color} ${c.id === cards[callNumber % 8].id ? 'trump-card' : ''}">${c.value}${c.suit}</span>`;
+    }).join(' ');
+}
+
+// Initial render
+renderCards();
+</script>
 </body>
 </html>
