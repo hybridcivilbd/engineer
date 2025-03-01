@@ -52,7 +52,14 @@
     <button id="talkBtn" disabled>Hold to Talk</button>
 
     <script>
-        const peer = new Peer(); // Create PeerJS instance
+        // Generate a Short Numeric Peer ID
+        function generateShortID() {
+            return Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit ID
+        }
+
+        const myPeerID = generateShortID(); // Assign numeric Peer ID
+        const peer = new Peer(myPeerID); // Start PeerJS with this ID
+
         let localStream = null;
         let call = null;
 
