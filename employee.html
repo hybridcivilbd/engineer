@@ -20,7 +20,7 @@
 
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script>
-        // Change this for each employee instance (e.g., emp-1001, emp-1002, emp-1003)
+        // Change this for each device (e.g., emp-1001, emp-1002, emp-1003)
         const employeeId = 'emp-1001'; 
         const peer = new Peer(employeeId);
         let conn;
@@ -37,11 +37,17 @@
             return mac;
         }
 
-        const macId = generateMacId();
+        // Store MAC ID in localStorage for consistency across reloads
+        let macId = localStorage.getItem(`macId_${employeeId}`);
+        if (!macId) {
+            macId = generateMacId();
+            localStorage.setItem(`macId_${employeeId}`, macId);
+        }
 
         peer.on('open', (id) => {
             document.getElementById('employeePeerId').textContent = id;
             document.getElementById('macId').textContent = macId;
+            console.log('Employee Peer ID:', id, 'MAC:', macId);
             connectToOffice();
         });
 
@@ -50,15 +56,20 @@
             conn.on('open', () => {
                 conn.send({ employeeId: employeeId, macId: macId, action: 'connect' });
                 document.getElementById('status').textContent = 'Connected to office Wi-Fi';
+                console.log('Connected to office-main, sent connect message');
                 startHeartbeat();
             });
             conn.on('error', (err) => {
                 document.getElementById('status').textContent = 'Connection failed: ' + err;
+                console.log('Connection error:', err);
                 stopHeartbeat();
+                setTimeout(connectToOffice, 2000); // Retry after 2 seconds
             });
             conn.on('close', () => {
                 document.getElementById('status').textContent = 'Disconnected from office Wi-Fi';
+                console.log('Connection closed');
                 stopHeartbeat();
+                setTimeout(connectToOffice, 2000); // Retry after 2 seconds
             });
         }
 
@@ -66,9 +77,10 @@
             heartbeatInterval = setInterval(() => {
                 if (conn && conn.open) {
                     conn.send({ employeeId: employeeId, macId: macId, action: 'heartbeat' });
+                    console.log('Sent heartbeat for', employeeId);
                 } else {
                     stopHeartbeat();
-                    connectToOffice(); // Attempt to reconnect if connection is lost
+                    connectToOffice(); // Reconnect if connection lost
                 }
             }, 4000); // Send heartbeat every 4 seconds
         }
