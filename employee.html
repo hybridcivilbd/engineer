@@ -15,6 +15,7 @@
 <body>
     <h1>Employee Device Simulator</h1>
     <p>Your Peer ID: <span id="employeePeerId"></span></p>
+    <p>Your MAC ID: <span id="macId"></span></p>
     <p>Status: <span id="status">Initializing...</span></p>
 
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -22,22 +23,63 @@
         const employeeId = 'emp-1001'; 
         const peer = new Peer(employeeId);
         let conn;
+        let heartbeatInterval;
+
+        function generateMacId() {
+            const hexChars = '0123456789ABCDEF';
+            let mac = '';
+            for (let i = 0; i < 6; i++) {
+                mac += hexChars[Math.floor(Math.random() * 16)];
+                mac += hexChars[Math.floor(Math.random() * 16)];
+                if (i < 5) mac += ':';
+            }
+            return mac;
+        }
+
+        const macId = generateMacId();
 
         peer.on('open', (id) => {
             document.getElementById('employeePeerId').textContent = id;
+            document.getElementById('macId').textContent = macId;
             connectToOffice();
         });
 
         function connectToOffice() {
             conn = peer.connect('office-main');
             conn.on('open', () => {
-                conn.send({ employeeId: employeeId, action: 'connect' });
+                conn.send({ employeeId: employeeId, macId: macId, action: 'connect' });
                 document.getElementById('status').textContent = 'Connected to office Wi-Fi';
+                startHeartbeat();
             });
             conn.on('error', (err) => {
                 document.getElementById('status').textContent = 'Connection failed: ' + err;
+                stopHeartbeat();
+            });
+            conn.on('close', () => {
+                document.getElementById('status').textContent = 'Disconnected from office Wi-Fi';
+                stopHeartbeat();
             });
         }
+
+        function startHeartbeat() {
+            heartbeatInterval = setInterval(() => {
+                if (conn && conn.open) {
+                    conn.send({ employeeId: employeeId, macId: macId, action: 'heartbeat' });
+                }
+            }, 4000); // Send heartbeat every 4 seconds (less than timeout)
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // Stop heartbeat when page unloads
+        window.onbeforeunload = () => {
+            stopHeartbeat();
+        };
     </script>
 </body>
 </html>
