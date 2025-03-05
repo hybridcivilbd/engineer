@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Device</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Employee Device Simulator</h1>
+    <p>Your Peer ID: <span id="employeePeerId"></span></p>
+    <p>Status: <span id="status">Initializing...</span></p>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script>
+        const employeeId = 'emp-1001'; 
+        const peer = new Peer(employeeId);
+        let conn;
+
+        peer.on('open', (id) => {
+            document.getElementById('employeePeerId').textContent = id;
+            connectToOffice();
+        });
+
+        function connectToOffice() {
+            conn = peer.connect('office-main');
+            conn.on('open', () => {
+                conn.send({ employeeId: employeeId, action: 'connect' });
+                document.getElementById('status').textContent = 'Connected to office Wi-Fi';
+            });
+            conn.on('error', (err) => {
+                document.getElementById('status').textContent = 'Connection failed: ' + err;
+            });
+        }
+    </script>
+</body>
+</html>
